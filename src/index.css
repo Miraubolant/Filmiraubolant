@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Police personnalisée */
+.font-outfit {
+  font-family: 'Outfit', sans-serif;
+}
+
+/* Styles de base pour les barres de défilement */
+:root {
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: rgba(156, 163, 175, 0.5);
+  --scrollbar-thumb-hover: rgba(156, 163, 175, 0.8);
+  --scrollbar-width: 8px;
+  --scrollbar-height: 8px;
+}
+
+.dark {
+  --scrollbar-thumb: rgba(107, 114, 128, 0.5);
+  --scrollbar-thumb-hover: rgba(107, 114, 128, 0.8);
+}
+
+/* Styles pour Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* Styles pour Chrome, Edge, et Safari */
+::-webkit-scrollbar {
+  width: var(--scrollbar-width);
+  height: var(--scrollbar-height);
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Supprimer l'outline par défaut sur les inputs */
+input:focus {
+  outline: none;
+}
+
+/* Styles spéciaux pour les conteneurs avec défilement */
+.scrollbar-custom {
+  scrollbar-gutter: stable;
+  overflow: auto;
+}
+
+/* Masquer la barre de défilement par défaut */
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+/* Barre de défilement élégante pour les modales */
+.modal-scrollbar {
+  --scrollbar-width: 6px;
+  --scrollbar-thumb: rgba(139, 92, 246, 0.5);
+  --scrollbar-thumb-hover: rgba(139, 92, 246, 0.8);
+}
+
+/* Barre de défilement horizontale pour les galeries */
+.gallery-scrollbar {
+  --scrollbar-height: 6px;
+  --scrollbar-thumb: rgba(139, 92, 246, 0.5);
+  --scrollbar-thumb-hover: rgba(139, 92, 246, 0.8);
+}
+
+/* Animation de défilement fluide */
+.smooth-scroll {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .smooth-scroll {
+    scroll-behavior: auto;
+  }
+}
+
+/* Animations */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Font Size Utilities */
+.text-size-small {
+  font-size: 0.875rem;
+}
+
+.text-size-medium {
+  font-size: 1rem;
+}
+
+.text-size-large {
+  font-size: 1.125rem;
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High Contrast Mode */
+@media (forced-colors: active) {
+  .high-contrast-border {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Loading States */
+.skeleton {
+  @apply animate-pulse bg-gray-200 dark:bg-gray-700 rounded;
+}
+
+/* Tooltips */
+.tooltip {
+  @apply invisible absolute;
+}
+
+.has-tooltip:hover .tooltip {
+  @apply visible z-50;
+}
+
+/* Styles pour les titres de films */
+.movie-title {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  background: linear-gradient(to right, #fff, #e2e8f0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
