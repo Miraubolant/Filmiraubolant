@@ -7,7 +7,7 @@ import { Film, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { Header } from '../components/Header';
 
-const ITEMS_PER_PAGE = 30;
+const ITEMS_PER_PAGE = 48;
 
 export function Home() {
   const [media, setMedia] = useState<(Movie | TVShow & { mediaType: 'movie' | 'tv'; page: number })[]>([]);
@@ -118,17 +118,27 @@ export function Home() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Header
         onSearch={setSearchQuery}
         onFilterChange={setFilters}
         filters={filters}
       />
 
-      {/* État de chargement pour la recherche */}
-      {isSearching && (
-        <div className="flex justify-center items-center py-8">
-          <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+      {/* État de chargement */}
+      {(isLoading || isSearching) && (
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="relative w-16 h-16">
+            {/* Cercle de chargement externe */}
+            <div className="absolute inset-0 rounded-full border-4 border-gray-800"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-red-600 animate-spin"></div>
+            
+            {/* Logo au centre */}
+            <Film className="absolute inset-0 w-8 h-8 m-auto text-red-600" />
+          </div>
+          <p className="mt-4 text-gray-400 animate-pulse">
+            {isSearching ? 'Recherche en cours...' : 'Chargement des films et séries...'}
+          </p>
         </div>
       )}
 
@@ -143,20 +153,22 @@ export function Home() {
         </div>
       )}
 
-      {/* Grille de médias avec plus de breakpoints */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-6">
-        {paginatedMedia.map((item) => (
-          <MediaCard
-            key={`${item.id}-${item.mediaType}`}
-            item={item}
-            type={item.mediaType}
-            showProviders={true}
-          />
-        ))}
-      </div>
+      {/* Grille de médias */}
+      {!isLoading && !isSearching && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-6">
+          {paginatedMedia.map((item) => (
+            <MediaCard
+              key={`${item.id}-${item.mediaType}`}
+              item={item}
+              type={item.mediaType}
+              showProviders={true}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Pagination */}
-      {filteredMedia.length > 0 && (
+      {!isLoading && !searchQuery && filteredMedia.length > 0 && (
         <div className="flex justify-center items-center gap-4 py-8">
           <button
             onClick={() => handlePageChange(currentPage - 1)}

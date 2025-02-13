@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { Tv, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Header } from '../components/Header';
 
-const ITEMS_PER_PAGE = 36;
+const ITEMS_PER_PAGE = 48;
 
 export function TVShows() {
   const navigate = useNavigate();
@@ -113,19 +113,31 @@ export function TVShows() {
   const paginatedShows = filteredShows.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Header
         onSearch={setSearchQuery}
         onFilterChange={handleFilterChange}
         filters={filters}
       />
 
-      {(isSearching || isLoading) && (
-        <div className="flex justify-center items-center py-8">
-          <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+      {/* État de chargement */}
+      {(isLoading || isSearching) && (
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="relative w-16 h-16">
+            {/* Cercle de chargement externe */}
+            <div className="absolute inset-0 rounded-full border-4 border-gray-800"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-red-600 animate-spin"></div>
+            
+            {/* Logo au centre */}
+            <Tv className="absolute inset-0 w-8 h-8 m-auto text-red-600" />
+          </div>
+          <p className="mt-4 text-gray-400 animate-pulse">
+            {isSearching ? 'Recherche en cours...' : 'Chargement des séries...'}
+          </p>
         </div>
       )}
 
+      {/* Message si aucun résultat */}
       {searchQuery && !isSearching && filteredShows.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <Tv className="w-16 h-16 text-gray-400 mb-4" />
@@ -136,8 +148,9 @@ export function TVShows() {
         </div>
       )}
 
+      {/* Grille de séries */}
       {!isLoading && !isSearching && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-6 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-6">
           {paginatedShows.map((show) => (
             <MediaCard key={show.id} item={show} type="tv" showProviders={true} />
           ))}

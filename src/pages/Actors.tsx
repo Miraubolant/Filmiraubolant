@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Star, Film, Tv, Calendar, ChevronLeft, ChevronRight, Search, X, SortAsc, TrendingUp } from 'lucide-react';
+import { Users, Star, Film, Tv, Calendar, ChevronLeft, ChevronRight, Search, X, SortAsc, TrendingUp, Filter } from 'lucide-react';
 import { fetchPopularActors, fetchActorDetails, searchActors } from '../api/tmdb';
 import { Person } from '../types/tmdb';
 import { Modal } from '../components/ui/Modal';
@@ -9,7 +9,7 @@ import { getZodiacSign } from '../utils/zodiac';
 type SortOption = 'popularity' | 'name' | 'trending';
 type FilterOption = 'all' | 'movie' | 'tv';
 
-const ITEMS_PER_PAGE = 36;
+const ITEMS_PER_PAGE = 42;
 
 export function Actors() {
   const [actors, setActors] = useState<Person[]>([]);
@@ -22,6 +22,19 @@ export function Actors() {
   const [sortBy, setSortBy] = useState<SortOption>('popularity');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [isSearching, setIsSearching] = useState(false);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+
+  const sortOptions = [
+    { value: 'popularity', label: 'Popularité', icon: Star },
+    { value: 'trending', label: 'Tendances', icon: TrendingUp },
+    { value: 'name', label: 'Nom', icon: SortAsc }
+  ];
+
+  const filterOptions = [
+    { value: 'all', label: 'Tout', icon: Users },
+    { value: 'movie', label: 'Films', icon: Film },
+    { value: 'tv', label: 'Séries', icon: Tv }
+  ];
 
   // Charger les acteurs populaires ou rechercher des acteurs
   useEffect(() => {
@@ -117,34 +130,12 @@ export function Actors() {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedActors = filteredActors.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-  const sortOptions = [
-    { value: 'popularity', label: 'Popularité', icon: Star },
-    { value: 'trending', label: 'Tendances', icon: TrendingUp },
-    { value: 'name', label: 'Nom', icon: SortAsc }
-  ];
-
-  const filterOptions = [
-    { value: 'all', label: 'Tous', icon: Users },
-    { value: 'movie', label: 'Films', icon: Film },
-    { value: 'tv', label: 'Séries', icon: Tv }
-  ];
-
   return (
     <div className="space-y-8">
       {/* En-tête */}
-      <div className="sticky top-16 z-40 bg-[#141414]/95 backdrop-blur-xl border-b border-theme shadow-lg -mx-4 px-4 py-4">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Users className="w-8 h-8 text-red-600" />
-              <h1 className="text-4xl font-bold font-outfit">
-                <span className="text-white">Acteurs</span>
-                <span className="ml-2 text-red-600">Populaires</span>
-              </h1>
-            </div>
-          </div>
-
-          {/* Barre de recherche et contrôles */}
+      <div className="sticky top-16 z-40 bg-[#141414]/95 backdrop-blur-xl border-b border-theme shadow-lg -mx-4 px-4">
+        <div className="flex flex-col gap-4 py-4">
+          {/* Barre de recherche et filtres */}
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
@@ -165,10 +156,18 @@ export function Actors() {
               )}
             </div>
 
-            {/* Séparateur vertical */}
-            <div className="h-8 w-px bg-theme" />
+            {/* Bouton filtres mobile */}
+            <button
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+              className="md:hidden p-2.5 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+            >
+              <Filter className="w-5 h-5" />
+            </button>
+          </div>
 
-            {/* Filtres par type */}
+          {/* Filtres version desktop */}
+          <div className="hidden md:flex items-center gap-4">
+            {/* Type de média */}
             <div className="flex items-center gap-2">
               {filterOptions.map(option => (
                 <button
@@ -207,6 +206,54 @@ export function Actors() {
               ))}
             </div>
           </div>
+
+          {/* Filtres version mobile */}
+          <AnimatePresence>
+            {showMobileFilters && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="md:hidden space-y-4"
+              >
+                {/* Type de média */}
+                <div className="grid grid-cols-3 gap-2">
+                  {filterOptions.map(option => (
+                    <button
+                      key={option.value}
+                      onClick={() => setFilterBy(option.value as FilterOption)}
+                      className={`flex flex-col items-center gap-1 p-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        filterBy === option.value
+                          ? 'bg-red-600 text-white'
+                          : 'text-gray-300 hover:bg-gray-800'
+                      }`}
+                    >
+                      <option.icon className="w-5 h-5" />
+                      <span>{option.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Options de tri */}
+                <div className="grid grid-cols-3 gap-2">
+                  {sortOptions.map(option => (
+                    <button
+                      key={option.value}
+                      onClick={() => setSortBy(option.value as SortOption)}
+                      className={`flex flex-col items-center gap-1 p-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        sortBy === option.value
+                          ? 'bg-red-600 text-white'
+                          : 'text-gray-300 hover:bg-gray-800'
+                      }`}
+                    >
+                      <option.icon className="w-5 h-5" />
+                      <span>{option.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -224,7 +271,7 @@ export function Actors() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-6 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-6">
           {paginatedActors.map((actor) => (
             <motion.button
               key={actor.id}
@@ -314,123 +361,103 @@ export function Actors() {
       )}
 
       {/* Modal de détails de l'acteur */}
-      <AnimatePresence>
+      <Modal
+        isOpen={!!selectedActor && !!actorDetails}
+        onClose={() => {
+          setSelectedActor(null);
+          setActorDetails(null);
+        }}
+        title="Détails de l'acteur"
+      >
         {selectedActor && actorDetails && (
-          <Modal
-            isOpen={true}
-            onClose={() => {
-              setSelectedActor(null);
-              setActorDetails(null);
-            }}
-          >
-            <div className="flex flex-col md:flex-row gap-8">
-              {/* Photo et informations */}
-              <div className="md:w-1/3">
-                <div className="relative rounded-xl overflow-hidden mb-4">
-                  <img
-                    src={`https://image.tmdb.org/t/p/w500${selectedActor.profile_path}`}
-                    alt={selectedActor.name}
-                    className="w-full aspect-[2/3] object-cover"
-                  />
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <h2 className="text-2xl font-bold text-white mb-2 font-outfit">{selectedActor.name}</h2>
-                    <div className="flex items-center gap-2">
-                      <Star className="w-5 h-5 text-red-500" />
-                      <span className="text-gray-400">Popularité: {selectedActor.popularity.toFixed(1)}</span>
-                    </div>
-                  </div>
-
-                  {actorDetails.birthday && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-gray-400" />
-                        <p className="text-gray-300">
-                          {new Date(actorDetails.birthday).toLocaleDateString('fr-FR', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric'
-                          })}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Star className="w-5 h-5 text-yellow-500" />
-                        <p className="text-gray-300">
-                          {getZodiacSign(actorDetails.birthday).symbol} {getZodiacSign(actorDetails.birthday).name}
-                          <span className="text-sm text-gray-500 ml-2">
-                            ({getZodiacSign(actorDetails.birthday).dates})
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {actorDetails.biography && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-2">Biographie</h3>
-                      <p className="text-gray-300 text-sm leading-relaxed">
-                        {actorDetails.biography}
-                      </p>
-                    </div>
-                  )}
-                </div>
+          <div className="flex flex-col md:flex-row gap-6">
+            <img
+              src={`https://image.tmdb.org/t/p/w342${selectedActor.profile_path}`}
+              alt={selectedActor.name}
+              className="w-full md:w-64 h-96 object-cover rounded-lg shadow-lg"
+            />
+            <div className="flex-1 space-y-4">
+              <div>
+                <h3 className="text-2xl font-bold mb-1">{selectedActor.name}</h3>
+                <p className="text-red-500">
+                  {selectedActor.known_for_department}
+                </p>
               </div>
+              
+              {actorDetails.birthday && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-gray-400" />
+                    <p>
+                      <span className="font-semibold">Naissance:</span>{' '}
+                      {new Date(actorDetails.birthday).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                      {actorDetails.place_of_birth && ` à ${actorDetails.place_of_birth}`}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Star className="w-5 h-5 text-yellow-500" />
+                    <p>
+                      <span className="font-semibold">Signe:</span>{' '}
+                      {getZodiacSign(actorDetails.birthday).symbol} {getZodiacSign(actorDetails.birthday).name}
+                      <span className="text-sm text-gray-500 ml-2">
+                        ({getZodiacSign(actorDetails.birthday).dates})
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {actorDetails.deathday && (
+                <p className="flex items-center gap-2">
+                  <span className="font-semibold">Décès:</span>{' '}
+                  {new Date(actorDetails.deathday).toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  })}
+                </p>
+              )}
+              
+              {actorDetails.biography && (
+                <div>
+                  <h4 className="font-semibold text-lg mb-2">Biographie</h4>
+                  <p className="text-sm leading-relaxed text-gray-300">
+                    {actorDetails.biography || "Aucune biographie disponible."}
+                  </p>
+                </div>
+              )}
 
               {/* Filmographie */}
-              <div className="md:w-2/3">
-                <h3 className="text-xl font-semibold text-white mb-4">Filmographie</h3>
-                <div className="space-y-4">
-                  {actorDetails.credits
-                    .filter((credit: any) => credit.poster_path)
-                    .map((credit: any, index: number) => (
-                      <motion.div
-                        key={`${credit.id}-${credit.media_type}-${index}`}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex gap-4 p-3 rounded-xl bg-gray-800/50 hover:bg-gray-800 transition-colors group"
-                      >
+              {actorDetails.known_for && actorDetails.known_for.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-lg mb-2">Films notables</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    {actorDetails.known_for.map((media: any) => (
+                      <div key={media.id} className="space-y-1">
                         <img
-                          src={`https://image.tmdb.org/t/p/w154${credit.poster_path}`}
-                          alt={credit.title || credit.name}
-                          className="w-16 h-24 object-cover rounded-lg"
+                          src={`https://image.tmdb.org/t/p/w185${media.poster_path}`}
+                          alt={media.title || media.name}
+                          className="w-full h-32 object-cover rounded-lg"
                         />
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <h4 className="text-white font-semibold group-hover:text-red-500 transition-colors font-outfit">
-                                {credit.title || credit.name}
-                              </h4>
-                              <p className="text-gray-400 text-sm">{credit.character}</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {credit.media_type === 'movie' ? (
-                                <Film className="w-4 h-4 text-red-500" />
-                              ) : (
-                                <Tv className="w-4 h-4 text-red-500" />
-                              )}
-                              <span className="text-sm text-gray-400">
-                                {credit.release_date || credit.first_air_date ? 
-                                  new Date(credit.release_date || credit.first_air_date).getFullYear() : 
-                                  'Date inconnue'
-                                }
-                              </span>
-                            </div>
-                          </div>
-                          {credit.overview && (
-                            <p className="text-sm text-gray-400 mt-2 line-clamp-2">
-                              {credit.overview}
-                            </p>
-                          )}
-                        </div>
-                      </motion.div>
+                        <p className="font-medium text-sm">
+                          {media.title || media.name}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {new Date(media.release_date || media.first_air_date).getFullYear()}
+                        </p>
+                      </div>
                     ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
-          </Modal>
+          </div>
         )}
-      </AnimatePresence>
+      </Modal>
     </div>
   );
 }

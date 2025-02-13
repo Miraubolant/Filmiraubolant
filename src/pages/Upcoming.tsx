@@ -124,114 +124,182 @@ export function Upcoming() {
     );
   }
 
+  // Grouper les films par mois
+  const moviesByMonth = movies.reduce((acc: { [key: string]: UpcomingMovie[] }, movie) => {
+    const date = new Date(movie.release_date);
+    const monthKey = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    if (!acc[monthKey]) {
+      acc[monthKey] = [];
+    }
+    acc[monthKey].push(movie);
+    return acc;
+  }, {});
+
   return (
     <div className="max-w-7xl mx-auto px-4">
-      <div className="flex items-center gap-3 mb-8">
-        <Calendar className="w-8 h-8 text-red-600" />
-        <h1 className="text-4xl font-bold">
-          <span className="text-white">Prochaines</span>
-          <span className="ml-2 text-red-600">Sorties</span>
-        </h1>
-      </div>
-
       <div className="relative">
-        {/* Ligne courbe verticale décorative */}
-        <div className="absolute left-1/2 top-0 bottom-0 w-1">
-          <div className="h-full w-full bg-gradient-to-b from-red-600/20 via-red-500/20 to-red-600/20 rounded-full" />
-          <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-            <path
-              d="M10,0 Q-20,500 10,1000"
-              className="stroke-red-600/30"
-              fill="none"
-              strokeWidth="2"
-              strokeDasharray="4 4"
-            />
-          </svg>
-        </div>
-
-        {/* Timeline des films */}
-        <div className="relative space-y-16 py-8">
-          {movies.map((movie, index) => {
-            const releaseDate = new Date(movie.release_date);
-            const isEven = index % 2 === 0;
-            
-            return (
-              <motion.div
-                key={movie.id}
-                initial={{ opacity: 0, x: isEven ? -50 : 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: Math.min(index * 0.1, 2) }}
-                className={`flex items-center gap-8 ${isEven ? 'flex-row' : 'flex-row-reverse'}`}
-              >
-                {/* Date */}
-                <div className={`w-32 flex ${isEven ? 'justify-end' : 'justify-start'}`}>
-                  <div className="px-3 py-2 rounded-xl bg-red-600 text-white text-sm font-medium shadow-lg">
-                    {releaseDate.toLocaleDateString('fr-FR', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric'
-                    })}
-                  </div>
-                </div>
-
-                {/* Connecteur */}
-                <div className="relative flex-shrink-0 w-8 h-8">
-                  <div className="absolute inset-0 bg-red-600 rounded-full shadow-lg transform scale-75" />
-                  <div className="absolute inset-1 bg-[#141414] rounded-full" />
-                  <div className="absolute inset-2 bg-red-600 rounded-full" />
-                </div>
-
-                {/* Carte du film */}
-                <motion.button
-                  onClick={() => setSelectedMovie(movie)}
-                  whileHover={{ scale: 1.02 }}
-                  className="flex-1 relative group bg-[#141414] rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  <div className="flex flex-col md:flex-row h-full">
-                    {/* Image */}
-                    <div className="relative w-full md:w-2/5 h-[200px] md:h-auto">
-                      <img
-                        src={`https://image.tmdb.org/t/p/w500${movie.backdrop_path}`}
-                        alt={movie.title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#141414]/80 via-[#141414]/40 to-transparent" />
-                    </div>
-
-                    {/* Contenu */}
-                    <div className="relative flex-1 p-6">
-                      <h3 className="text-2xl font-bold movie-title mb-3">
-                        {movie.title}
-                      </h3>
-                      
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-red-600/10 text-red-500">
-                          <Clock className="w-4 h-4" />
-                          <time className="text-sm font-medium">
-                            {releaseDate.toLocaleDateString('fr-FR', {
-                              day: 'numeric',
-                              month: 'short'
-                            })}
-                          </time>
+        {/* Version mobile : liste par mois */}
+        <div className="md:hidden space-y-8">
+          {Object.entries(moviesByMonth).map(([month, monthMovies]) => (
+            <section key={month} className="space-y-4">
+              <h2 className="text-xl font-bold text-red-600 sticky top-[4.5rem] bg-[#141414]/95 backdrop-blur-sm py-2 z-10">
+                {month.charAt(0).toUpperCase() + month.slice(1)}
+              </h2>
+              <div className="space-y-4">
+                {monthMovies.map((movie, index) => {
+                  const releaseDate = new Date(movie.release_date);
+                  return (
+                    <motion.button
+                      key={movie.id}
+                      onClick={() => setSelectedMovie(movie)}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="w-full bg-gray-800/50 rounded-xl overflow-hidden hover:bg-gray-800 transition-colors"
+                    >
+                      <div className="flex gap-4">
+                        <div className="relative w-1/3 aspect-[2/3]">
+                          <img
+                            src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`}
+                            alt={movie.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                         </div>
-                        <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-500">
-                          <Star className="w-4 h-4" />
-                          <span className="text-sm font-medium">{movie.vote_average.toFixed(1)}</span>
+                        <div className="flex-1 p-4 text-left">
+                          <h3 className="text-lg font-bold mb-2">{movie.title}</h3>
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            <div className="flex items-center gap-1 px-2 py-1 bg-red-600/20 rounded-lg">
+                              <Calendar className="w-4 h-4 text-red-500" />
+                              <time className="text-sm">
+                                {releaseDate.toLocaleDateString('fr-FR', {
+                                  day: 'numeric',
+                                  month: 'short'
+                                })}
+                              </time>
+                            </div>
+                            {movie.vote_average > 0 && (
+                              <div className="flex items-center gap-1 px-2 py-1 bg-yellow-500/20 rounded-lg">
+                                <Star className="w-4 h-4 text-yellow-500" />
+                                <span className="text-sm">{movie.vote_average.toFixed(1)}</span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-400 line-clamp-3">
+                            {movie.overview || "Aucune description disponible."}
+                          </p>
                         </div>
                       </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
 
-                      <p className="text-sm text-gray-400 line-clamp-3">
-                        {movie.overview || "Aucune description disponible."}
-                      </p>
+        {/* Version desktop : timeline */}
+        <div className="hidden md:block">
+          {/* Ligne courbe verticale décorative */}
+          <div className="absolute left-1/2 top-0 bottom-0 w-1">
+            <div className="h-full w-full bg-gradient-to-b from-red-600/20 via-red-500/20 to-red-600/20 rounded-full" />
+            <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+              <path
+                d="M10,0 Q-20,500 10,1000"
+                className="stroke-red-600/30"
+                fill="none"
+                strokeWidth="2"
+                strokeDasharray="4 4"
+              />
+            </svg>
+          </div>
+
+          {/* Timeline des films */}
+          <div className="relative space-y-16 py-8">
+            {movies.map((movie, index) => {
+              const releaseDate = new Date(movie.release_date);
+              const isEven = index % 2 === 0;
+              
+              return (
+                <motion.div
+                  key={movie.id}
+                  initial={{ opacity: 0, x: isEven ? -50 : 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: Math.min(index * 0.1, 2) }}
+                  className={`flex items-center gap-8 ${isEven ? 'flex-row' : 'flex-row-reverse'}`}
+                >
+                  {/* Date */}
+                  <div className={`w-32 flex ${isEven ? 'justify-end' : 'justify-start'}`}>
+                    <div className="px-3 py-2 rounded-xl bg-red-600 text-white text-sm font-medium shadow-lg">
+                      {releaseDate.toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
                     </div>
                   </div>
 
-                  {/* Effet de survol */}
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-r from-red-600/5 to-red-500/5 transition-opacity duration-300" />
-                </motion.button>
-              </motion.div>
-            );
-          })}
+                  {/* Connecteur */}
+                  <div className="relative flex-shrink-0 w-8 h-8">
+                    <div className="absolute inset-0 bg-red-600 rounded-full shadow-lg transform scale-75" />
+                    <div className="absolute inset-1 bg-[#141414] rounded-full" />
+                    <div className="absolute inset-2 bg-red-600 rounded-full" />
+                  </div>
+
+                  {/* Carte du film */}
+                  <motion.button
+                    onClick={() => setSelectedMovie(movie)}
+                    whileHover={{ scale: 1.02 }}
+                    className="flex-1 relative group bg-[#141414] rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    <div className="flex flex-col md:flex-row h-full">
+                      {/* Image */}
+                      <div className="relative w-full md:w-2/5 h-[200px] md:h-auto">
+                        <img
+                          src={`https://image.tmdb.org/t/p/w500${movie.backdrop_path}`}
+                          alt={movie.title}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#141414]/80 via-[#141414]/40 to-transparent" />
+                      </div>
+
+                      {/* Contenu */}
+                      <div className="relative flex-1 p-6">
+                        <h3 className="text-2xl font-bold movie-title mb-3">
+                          {movie.title}
+                        </h3>
+                        
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-red-600/10 text-red-500">
+                            <Clock className="w-4 h-4" />
+                            <time className="text-sm font-medium">
+                              {releaseDate.toLocaleDateString('fr-FR', {
+                                day: 'numeric',
+                                month: 'short'
+                              })}
+                            </time>
+                          </div>
+                          {movie.vote_average > 0 && (
+                            <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-500">
+                              <Star className="w-4 h-4" />
+                              <span className="text-sm font-medium">{movie.vote_average.toFixed(1)}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <p className="text-sm text-gray-400 line-clamp-3">
+                          {movie.overview || "Aucune description disponible."}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Effet de survol */}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-r from-red-600/5 to-red-500/5 transition-opacity duration-300" />
+                  </motion.button>
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Star, Monitor, Plus, List, History, Info, X, User, Calendar, Clock, Film, Play } from 'lucide-react';
+import { Heart, Star, Monitor, History, Info, X, User, Calendar, Clock, Film, Play } from 'lucide-react';
 import { Movie, TVShow, Cast } from '../types/tmdb';
 import { useStore } from '../store/useStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,7 +16,6 @@ interface MediaCardProps {
 
 export function MediaCard({ item, type, showProviders = false }: MediaCardProps) {
   const { favorites, addFavorite, removeFavorite, addToHistory } = useStore();
-  const [showListMenu, setShowListMenu] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [details, setDetails] = useState<any>(null);
@@ -95,6 +94,8 @@ export function MediaCard({ item, type, showProviders = false }: MediaCardProps)
               src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
               alt={type === 'movie' ? item.title : (item as TVShow).name}
               className="w-full h-[400px] object-cover"
+              loading="lazy"
+              decoding="async"
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.2 }}
             />
@@ -125,11 +126,14 @@ export function MediaCard({ item, type, showProviders = false }: MediaCardProps)
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
                         className="block"
+                        aria-label={`Regarder sur ${provider.provider_name}`}
                       >
                         <motion.img
                           src={`https://image.tmdb.org/t/p/original${provider.logo_path}`}
                           alt={provider.provider_name}
                           className="w-8 h-8 rounded-lg"
+                          loading="lazy"
+                          decoding="async"
                           whileHover={{ scale: 1.1 }}
                         />
                       </a>
@@ -141,8 +145,8 @@ export function MediaCard({ item, type, showProviders = false }: MediaCardProps)
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="absolute top-2 right-2 flex flex-col gap-2">
+        {/* Bouton Favori */}
+        <div className="absolute top-2 right-2">
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -153,6 +157,7 @@ export function MediaCard({ item, type, showProviders = false }: MediaCardProps)
                 : addFavorite(item, type);
             }}
             className="p-2 bg-black/50 rounded-full hover:bg-red-600 transition-colors backdrop-blur-sm"
+            aria-label={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
           >
             <Heart
               className={`w-5 h-5 ${
@@ -160,48 +165,30 @@ export function MediaCard({ item, type, showProviders = false }: MediaCardProps)
               }`}
             />
           </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowListMenu(!showListMenu);
-            }}
-            className="p-2 bg-black/50 rounded-full hover:bg-red-600 transition-colors backdrop-blur-sm"
-          >
-            <Plus className="w-5 h-5 text-white" />
-          </motion.button>
         </div>
       </motion.div>
 
       {/* Modal de détails */}
       <AnimatePresence>
         {showDetails && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => setShowDetails(false)}
+          <Modal
+            isOpen={true}
+            onClose={() => setShowDetails(false)}
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-[#141414] rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-              onClick={e => e.stopPropagation()}
-            >
-              {/* Image de fond avec dégradé */}
-              <div className="relative h-[40vh]">
+            {/* Contenu de la modal */}
+            <div className="space-y-8">
+              {/* En-tête avec image de fond */}
+              <div className="relative h-[40vh] -m-4 mb-4">
                 <img
                   src={`https://image.tmdb.org/t/p/original${item.backdrop_path}`}
                   alt={type === 'movie' ? item.title : (item as TVShow).name}
                   className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-black/50 to-transparent">
                   <div className="absolute bottom-0 left-0 p-8">
-                    <h2 className="text-4xl font-bold movie-title font-outfit mb-4">
+                    <h2 className="text-4xl font-bold movie-title mb-4">
                       {type === 'movie' ? item.title : (item as TVShow).name}
                     </h2>
                     <div className="flex flex-wrap items-center gap-4">
@@ -229,114 +216,119 @@ export function MediaCard({ item, type, showProviders = false }: MediaCardProps)
                 <button
                   onClick={() => setShowDetails(false)}
                   className="absolute top-4 right-4 p-2 rounded-full bg-black/20 hover:bg-black/40 transition-colors"
+                  aria-label="Fermer"
                 >
                   <X className="w-6 h-6 text-white" />
                 </button>
               </div>
 
-              {/* Contenu */}
-              <div className="p-8 space-y-8">
-                {/* Synopsis */}
-                <div>
-                  <h3 className="text-2xl font-bold text-white mb-4">Synopsis</h3>
-                  <p className="text-gray-300 leading-relaxed">
-                    {item.overview || "Aucun synopsis disponible."}
-                  </p>
-                </div>
-
-                {/* Bande-annonce */}
-                {trailer && (
-                  <div>
-                    <h3 className="text-2xl font-bold text-white mb-4">Bande-annonce</h3>
-                    <a
-                      href={`https://www.youtube.com/watch?v=${trailer}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="relative block aspect-video rounded-xl overflow-hidden group"
-                    >
-                      <img
-                        src={`https://img.youtube.com/vi/${trailer}/maxresdefault.jpg`}
-                        alt="Trailer thumbnail"
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/60 transition-colors">
-                        <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Play className="w-8 h-8 text-white fill-white" />
-                        </div>
-                      </div>
-                    </a>
-                  </div>
-                )}
-
-                {/* Distribution */}
-                {cast.length > 0 && (
-                  <div>
-                    <h3 className="text-2xl font-bold text-white mb-6">Distribution</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                      {cast.map((actor) => (
-                        <motion.button
-                          key={actor.id}
-                          whileHover={{ scale: 1.05 }}
-                          className="group cursor-pointer"
-                          onClick={() => handleShowActorDetails(actor)}
-                        >
-                          <div className="relative overflow-hidden rounded-lg mb-2">
-                            <img
-                              src={`https://image.tmdb.org/t/p/w185${actor.profile_path}`}
-                              alt={actor.name}
-                              className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-110"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                              <p className="text-white text-sm">{actor.character}</p>
-                            </div>
-                          </div>
-                          <p className="font-semibold text-center text-white group-hover:text-red-500 transition-colors">
-                            {actor.name}
-                          </p>
-                        </motion.button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Plateformes de streaming */}
-                {providers && (providers.flatrate || providers.rent || providers.buy) && (
-                  <div>
-                    <h3 className="text-2xl font-bold text-white mb-6">Où regarder</h3>
-                    
-                    {providers.flatrate && (
-                      <div className="mb-6">
-                        <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                          <Monitor className="w-5 h-5 text-red-500" />
-                          Streaming
-                        </h4>
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-                          {providers.flatrate.map((provider: any) => (
-                            <a
-                              key={provider.provider_id}
-                              href={providers.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="group flex flex-col items-center"
-                            >
-                              <img
-                                src={`https://image.tmdb.org/t/p/original${provider.logo_path}`}
-                                alt={provider.provider_name}
-                                className="w-16 h-16 rounded-xl shadow-lg transition-transform group-hover:scale-110"
-                              />
-                              <span className="mt-2 text-sm text-gray-400 group-hover:text-white transition-colors">
-                                {provider.provider_name}
-                              </span>
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+              {/* Synopsis */}
+              <div>
+                <h3 className="text-2xl font-bold mb-4">Synopsis</h3>
+                <p className="text-gray-300 leading-relaxed">
+                  {item.overview || "Aucun synopsis disponible."}
+                </p>
               </div>
-            </motion.div>
-          </motion.div>
+
+              {/* Bande-annonce */}
+              {trailer && (
+                <div>
+                  <h3 className="text-2xl font-bold mb-4">Bande-annonce</h3>
+                  <a
+                    href={`https://www.youtube.com/watch?v=${trailer}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="relative block aspect-video rounded-xl overflow-hidden group"
+                  >
+                    <img
+                      src={`https://img.youtube.com/vi/${trailer}/maxresdefault.jpg`}
+                      alt="Trailer thumbnail"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/60 transition-colors">
+                      <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Play className="w-8 h-8 text-white fill-white" />
+                      </div>
+                    </div>
+                  </a>
+                </div>
+              )}
+
+              {/* Distribution */}
+              {cast.length > 0 && (
+                <div>
+                  <h3 className="text-2xl font-bold mb-6">Distribution</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                    {cast.map((actor) => (
+                      <motion.button
+                        key={actor.id}
+                        whileHover={{ scale: 1.05 }}
+                        className="group cursor-pointer"
+                        onClick={() => handleShowActorDetails(actor)}
+                      >
+                        <div className="relative overflow-hidden rounded-lg mb-2">
+                          <img
+                            src={`https://image.tmdb.org/t/p/w185${actor.profile_path}`}
+                            alt={actor.name}
+                            className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-110"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                            <p className="text-white text-sm">{actor.character}</p>
+                          </div>
+                        </div>
+                        <p className="font-semibold text-center text-white group-hover:text-red-500 transition-colors">
+                          {actor.name}
+                        </p>
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Plateformes de streaming */}
+              {providers && (providers.flatrate || providers.rent || providers.buy) && (
+                <div>
+                  <h3 className="text-2xl font-bold mb-6">Où regarder</h3>
+                  
+                  {providers.flatrate && (
+                    <div className="mb-6">
+                      <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <Monitor className="w-5 h-5 text-red-500" />
+                        Streaming
+                      </h4>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+                        {providers.flatrate.map((provider: any) => (
+                          <a
+                            key={provider.provider_id}
+                            href={providers.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex flex-col items-center"
+                            aria-label={`Regarder sur ${provider.provider_name}`}
+                          >
+                            <img
+                              src={`https://image.tmdb.org/t/p/original${provider.logo_path}`}
+                              alt={provider.provider_name}
+                              className="w-16 h-16 rounded-xl shadow-lg transition-transform group-hover:scale-110"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                            <span className="mt-2 text-sm text-gray-400 group-hover:text-white transition-colors">
+                              {provider.provider_name}
+                            </span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </Modal>
         )}
       </AnimatePresence>
 
@@ -355,6 +347,8 @@ export function MediaCard({ item, type, showProviders = false }: MediaCardProps)
               src={`https://image.tmdb.org/t/p/w342${selectedActor.profile_path}`}
               alt={selectedActor.name}
               className="w-full md:w-64 h-96 object-cover rounded-lg shadow-lg"
+              loading="lazy"
+              decoding="async"
             />
             <div className="flex-1 space-y-4">
               <div>
@@ -402,17 +396,9 @@ export function MediaCard({ item, type, showProviders = false }: MediaCardProps)
                 </p>
               )}
               
-              {actorDetails.known_for_department && (
-                <p className="flex items-center gap-2">
-                  <Film className="w-5 h-5 text-gray-400" />
-                  <span className="font-semibold">Connu(e) pour:</span>{' '}
-                  {actorDetails.known_for_department}
-                </p>
-              )}
-              
               {actorDetails.biography && (
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-lg">Biographie</h4>
+                <div>
+                  <h4 className="font-semibold text-lg mb-2">Biographie</h4>
                   <p className="text-sm leading-relaxed text-gray-300">
                     {actorDetails.biography || "Aucune biographie disponible."}
                   </p>

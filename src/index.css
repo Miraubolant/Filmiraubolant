@@ -12,15 +12,15 @@
   --border-color: rgba(185, 28, 28, 0.2); /* red-900/20 */
   --border-focus-color: rgba(220, 38, 38, 0.5); /* red-600/50 */
   --scrollbar-track: transparent;
-  --scrollbar-thumb: rgba(156, 163, 175, 0.5);
-  --scrollbar-thumb-hover: rgba(156, 163, 175, 0.8);
+  --scrollbar-thumb: rgba(220, 38, 38, 0.5); /* red-600/50 */
+  --scrollbar-thumb-hover: rgba(220, 38, 38, 0.8); /* red-600/80 */
   --scrollbar-width: 8px;
   --scrollbar-height: 8px;
 }
 
 .dark {
-  --scrollbar-thumb: rgba(107, 114, 128, 0.5);
-  --scrollbar-thumb-hover: rgba(107, 114, 128, 0.8);
+  --scrollbar-thumb: rgba(220, 38, 38, 0.5); /* red-600/50 */
+  --scrollbar-thumb-hover: rgba(220, 38, 38, 0.8); /* red-600/80 */
 }
 
 /* Styles pour les bordures */
@@ -83,15 +83,15 @@ input:focus {
 /* Barre de défilement élégante pour les modales */
 .modal-scrollbar {
   --scrollbar-width: 6px;
-  --scrollbar-thumb: rgba(139, 92, 246, 0.5);
-  --scrollbar-thumb-hover: rgba(139, 92, 246, 0.8);
+  --scrollbar-thumb: rgba(220, 38, 38, 0.5); /* red-600/50 */
+  --scrollbar-thumb-hover: rgba(220, 38, 38, 0.8); /* red-600/80 */
 }
 
 /* Barre de défilement horizontale pour les galeries */
 .gallery-scrollbar {
   --scrollbar-height: 6px;
-  --scrollbar-thumb: rgba(139, 92, 246, 0.5);
-  --scrollbar-thumb-hover: rgba(139, 92, 246, 0.8);
+  --scrollbar-thumb: rgba(220, 38, 38, 0.5); /* red-600/50 */
+  --scrollbar-thumb-hover: rgba(220, 38, 38, 0.8); /* red-600/80 */
 }
 
 /* Animation de défilement fluide */

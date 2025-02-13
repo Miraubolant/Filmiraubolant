@@ -3,9 +3,10 @@ import { useParams } from 'react-router-dom';
 import { Movie, TVShow, Cast, WatchProvider, Video } from '../types/tmdb';
 import { fetchDetails, fetchCredits, fetchWatchProviders, fetchVideos, fetchPersonDetails } from '../api/tmdb';
 import { motion } from 'framer-motion';
-import { ExternalLink, Star, Monitor, ShoppingCart } from 'lucide-react';
+import { ExternalLink, Star, Monitor, Calendar, Clock, Play } from 'lucide-react';
 import VideoPlayer from '../components/ui/video-player';
 import { Modal } from '../components/ui/Modal';
+import { getZodiacSign } from '../utils/zodiac';
 
 interface PersonDetails {
   biography: string;
@@ -86,6 +87,7 @@ export function Details() {
 
   return (
     <div className="space-y-8">
+      {/* Image de fond et informations principales */}
       <div className="relative h-[60vh] overflow-hidden rounded-xl">
         <img
           src={`https://image.tmdb.org/t/p/original${details.backdrop_path}`}
@@ -106,146 +108,109 @@ export function Details() {
                 <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
                 <span className="font-semibold">{rating}/10</span>
               </div>
+              {details && mediaType === 'movie' && (details as Movie).runtime && (
+                <div className="flex items-center gap-2 bg-red-600/20 px-3 py-1.5 rounded-lg">
+                  <Clock className="w-5 h-5 text-red-500" />
+                  <span className="font-semibold">{(details as Movie).runtime} min</span>
+                </div>
+              )}
+              {details && mediaType === 'tv' && (details as TVShow).number_of_seasons && (
+                <div className="flex items-center gap-2 bg-red-600/20 px-3 py-1.5 rounded-lg">
+                  <Monitor className="w-5 h-5 text-red-500" />
+                  <span className="font-semibold">{(details as TVShow).number_of_seasons} saisons</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2 bg-red-600/20 px-3 py-1.5 rounded-lg">
+                <Calendar className="w-5 h-5 text-red-500" />
+                <span className="font-semibold">
+                  {new Date(mediaType === 'movie' ? (details as Movie).release_date : (details as TVShow).first_air_date).getFullYear()}
+                </span>
+              </div>
             </div>
             <p className="text-lg max-w-2xl mb-6">{details.overview}</p>
           </div>
         </div>
       </div>
 
+      {/* Plateformes de streaming */}
+      {providers && (providers.flatrate || providers.rent || providers.buy) && (
+        <section>
+          <h2 className="text-2xl font-bold mb-6">Où regarder</h2>
+          
+          {providers.flatrate && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Monitor className="w-5 h-5 text-red-500" />
+                Streaming
+              </h3>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+                {providers.flatrate.map((provider) => (
+                  <a
+                    key={provider.provider_id}
+                    href={provider.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group flex flex-col items-center"
+                  >
+                    <img
+                      src={`https://image.tmdb.org/t/p/original${provider.logo_path}`}
+                      alt={provider.provider_name}
+                      className="w-16 h-16 rounded-xl shadow-lg transition-transform group-hover:scale-110"
+                    />
+                    <span className="mt-2 text-sm text-gray-400 group-hover:text-white transition-colors">
+                      {provider.provider_name}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Synopsis */}
+      <section>
+        <h2 className="text-2xl font-bold mb-4">Synopsis</h2>
+        <p className="text-gray-300 leading-relaxed">
+          {details.overview || "Aucun synopsis disponible."}
+        </p>
+      </section>
+
+      {/* Bande-annonce */}
       {trailer && (
-        <section className="space-y-4">
-          <h2 className="text-2xl font-bold">Bande-annonce</h2>
+        <section>
+          <h2 className="text-2xl font-bold mb-4">Bande-annonce</h2>
           <VideoPlayer src={`https://www.youtube.com/embed/${trailer.key}?autoplay=0`} />
         </section>
       )}
 
-      {(providers.flatrate.length > 0 || providers.rent.length > 0 || providers.buy.length > 0) && (
-        <section>
-          <h2 className="text-2xl font-bold mb-6">Où regarder</h2>
-          
-          {providers.flatrate.length > 0 && (
-            <div className="mb-8">
-              <div className="flex items-center gap-2 mb-4">
-                <Monitor className="w-5 h-5 text-purple-400" />
-                <h3 className="text-xl font-semibold">Streaming</h3>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {providers.flatrate.map((provider) => (
-                  <motion.a
-                    href={provider.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    key={provider.provider_id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col items-center p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors group"
-                  >
-                    <img
-                      src={`https://image.tmdb.org/t/p/original${provider.logo_path}`}
-                      alt={provider.provider_name}
-                      className="w-16 h-16 rounded-lg mb-2"
-                    />
-                    <p className="text-sm text-center group-hover:text-purple-400 transition-colors">
-                      {provider.provider_name}
-                    </p>
-                    <ExternalLink className="w-4 h-4 mt-2 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </motion.a>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {providers.rent.length > 0 && (
-            <div className="mb-8">
-              <div className="flex items-center gap-2 mb-4">
-                <ShoppingCart className="w-5 h-5 text-green-400" />
-                <h3 className="text-xl font-semibold">Location</h3>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {providers.rent.map((provider) => (
-                  <motion.a
-                    href={provider.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    key={provider.provider_id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col items-center p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors group"
-                  >
-                    <img
-                      src={`https://image.tmdb.org/t/p/original${provider.logo_path}`}
-                      alt={provider.provider_name}
-                      className="w-16 h-16 rounded-lg mb-2"
-                    />
-                    <p className="text-sm text-center group-hover:text-green-400 transition-colors">
-                      {provider.provider_name}
-                    </p>
-                    <ExternalLink className="w-4 h-4 mt-2 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </motion.a>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {providers.buy.length > 0 && (
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <ShoppingCart className="w-5 h-5 text-blue-400" />
-                <h3 className="text-xl font-semibold">Achat</h3>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {providers.buy.map((provider) => (
-                  <motion.a
-                    href={provider.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    key={provider.provider_id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col items-center p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-colors group"
-                  >
-                    <img
-                      src={`https://image.tmdb.org/t/p/original${provider.logo_path}`}
-                      alt={provider.provider_name}
-                      className="w-16 h-16 rounded-lg mb-2"
-                    />
-                    <p className="text-sm text-center group-hover:text-blue-400 transition-colors">
-                      {provider.provider_name}
-                    </p>
-                    <ExternalLink className="w-4 h-4 mt-2 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </motion.a>
-                ))}
-              </div>
-            </div>
-          )}
-        </section>
-      )}
-
+      {/* Distribution */}
       {credits.length > 0 && (
         <section>
-          <h2 className="text-2xl font-bold mb-4">Distribution</h2>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {credits.map((cast) => (
+          <h2 className="text-2xl font-bold mb-6">Distribution</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {credits.map((actor) => (
               <motion.button
-                key={cast.id}
+                key={actor.id}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="text-center cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => setSelectedActor(cast)}
+                onClick={() => setSelectedActor(actor)}
               >
                 <img
-                  src={`https://image.tmdb.org/t/p/w185${cast.profile_path}`}
-                  alt={cast.name}
+                  src={`https://image.tmdb.org/t/p/w185${actor.profile_path}`}
+                  alt={actor.name}
                   className="w-full h-48 object-cover rounded-lg mb-2"
                 />
-                <p className="font-semibold">{cast.name}</p>
-                <p className="text-sm text-gray-400">{cast.character}</p>
+                <p className="font-semibold">{actor.name}</p>
+                <p className="text-sm text-gray-400">{actor.character}</p>
               </motion.button>
             ))}
           </div>
         </section>
       )}
 
+      {/* Modal des détails de l'acteur */}
       <Modal
         isOpen={!!selectedActor}
         onClose={() => {

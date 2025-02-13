@@ -55,25 +55,6 @@ export function History() {
       {/* En-tête */}
       <div className="sticky top-16 z-40 bg-[#141414]/95 backdrop-blur-xl border-b border-theme shadow-lg -mx-4 px-4 py-4">
         <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <HistoryIcon className="w-8 h-8 text-red-600" />
-              <h2 className="text-4xl font-bold font-outfit">
-                <span className="text-white">Historique de</span>
-                <span className="ml-2 text-red-600">Visionnage</span>
-              </h2>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-4 py-2 bg-red-600/10 rounded-lg">
-                <Clock className="w-5 h-5 text-red-500" />
-                <div className="text-sm">
-                  <span className="font-medium text-white">{filteredHistory.length}</span>
-                  <span className="text-gray-400 ml-2">films et séries vus</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Barre de recherche et contrôles */}
           <div className="flex items-center gap-4">
             {/* Barre de recherche */}
@@ -150,7 +131,7 @@ export function History() {
       {/* Grille de médias */}
       {filteredHistory.length > 0 ? (
         <div className={viewMode === 'grid'
-          ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-6'
+          ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-6'
           : 'space-y-4'
         }>
           {filteredHistory.map(({ item, type, watchedAt }) => (
