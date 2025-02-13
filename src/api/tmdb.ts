@@ -13,21 +13,34 @@ const CACHE_DURATIONS = {
 };
 
 export async function fetchTrending(mediaType: 'movie' | 'tv', page: number = 1) {
-  const response = await fetch(`${API_BASE}/trending/${mediaType}/week?page=${page}`);
-  const data = await response.json();
-  
+  // Récupérer plusieurs pages en parallèle
+  const pages = await Promise.all([
+    fetch(`${API_BASE}/trending/${mediaType}/week?page=${page}`).then(r => r.json()),
+    fetch(`${API_BASE}/trending/${mediaType}/week?page=${page + 1}`).then(r => r.json()),
+    fetch(`${API_BASE}/discover/${mediaType}?sort_by=popularity.desc&page=${page}`).then(r => r.json())
+  ]);
+
+  // Combiner les résultats
+  const combinedResults = [
+    ...pages[0].results,
+    ...pages[1].results,
+    ...pages[2].results
+  ].filter((item, index, self) => 
+    index === self.findIndex((t) => t.id === item.id)
+  );
+
   // Si c'est un film, récupérer la durée pour chaque film
   if (mediaType === 'movie') {
     const moviesWithRuntime = await Promise.all(
-      data.results.map(async (movie: Movie) => {
+      combinedResults.map(async (movie: Movie) => {
         const details = await fetchDetails(movie.id, 'movie');
         return { ...movie, runtime: details.runtime };
       })
     );
-    return { ...data, results: moviesWithRuntime };
+    return { results: moviesWithRuntime, total_pages: Math.max(...pages.map(p => p.total_pages)) };
   }
   
-  return data;
+  return { results: combinedResults, total_pages: Math.max(...pages.map(p => p.total_pages)) };
 }
 
 export async function fetchTrendingWithProviders(mediaType: 'movie' | 'tv', page: number = 1) {
@@ -46,11 +59,24 @@ export async function fetchTrendingWithProviders(mediaType: 'movie' | 'tv', page
 }
 
 export async function searchWithProviders(query: string, mediaType: 'movie' | 'tv') {
-  const data = await searchMedia(query, mediaType);
-  if (!data.results) return { results: [] };
+  // Rechercher dans plusieurs sources
+  const [searchResults, discoverResults] = await Promise.all([
+    fetch(`${API_BASE}/search/${mediaType}?query=${encodeURIComponent(query)}`).then(r => r.json()),
+    fetch(`${API_BASE}/discover/${mediaType}?with_keywords=${encodeURIComponent(query)}`).then(r => r.json())
+  ]);
+
+  // Combiner et dédupliquer les résultats
+  const combinedResults = [
+    ...searchResults.results,
+    ...discoverResults.results
+  ].filter((item, index, self) => 
+    index === self.findIndex((t) => t.id === item.id)
+  );
+
+  if (!combinedResults) return { results: [] };
   
   const results = await Promise.all(
-    data.results.map(async (item: Movie | TVShow) => {
+    combinedResults.map(async (item: Movie | TVShow) => {
       const [providers, details] = await Promise.all([
         fetchWatchProviders(item.id, mediaType),
         mediaType === 'movie' ? fetchDetails(item.id, mediaType) : Promise.resolve({})
@@ -63,7 +89,7 @@ export async function searchWithProviders(query: string, mediaType: 'movie' | 't
       };
     })
   );
-  return { ...data, results };
+  return { results };
 }
 
 export async function fetchDetails(id: number, mediaType: 'movie' | 'tv') {
@@ -118,33 +144,6 @@ export async function fetchVideos(id: number, mediaType: 'movie' | 'tv') {
   const data = await response.json();
   
   cache.set(cacheKey, data, CACHE_DURATIONS.DETAILS);
-  
-  return data;
-}
-
-export async function searchMedia(query: string, mediaType: 'movie' | 'tv') {
-  const cacheKey = `search_${mediaType}_${query}`;
-  
-  const cachedData = cache.get(cacheKey);
-  if (cachedData) return cachedData;
-
-  const response = await fetch(
-    `${API_BASE}/search/${mediaType}?query=${encodeURIComponent(query)}`
-  );
-  const data = await response.json();
-  
-  // Si c'est un film, récupérer la durée pour chaque film
-  if (mediaType === 'movie') {
-    const moviesWithRuntime = await Promise.all(
-      data.results.map(async (movie: Movie) => {
-        const details = await fetchDetails(movie.id, 'movie');
-        return { ...movie, runtime: details.runtime };
-      })
-    );
-    data.results = moviesWithRuntime;
-  }
-  
-  cache.set(cacheKey, data, CACHE_DURATIONS.SEARCH);
   
   return data;
 }

@@ -7,8 +7,10 @@
   font-family: 'Outfit', sans-serif;
 }
 
-/* Styles de base pour les barres de défilement */
+/* Variables de couleurs personnalisées */
 :root {
+  --border-color: rgba(185, 28, 28, 0.2); /* red-900/20 */
+  --border-focus-color: rgba(220, 38, 38, 0.5); /* red-600/50 */
   --scrollbar-track: transparent;
   --scrollbar-thumb: rgba(156, 163, 175, 0.5);
   --scrollbar-thumb-hover: rgba(156, 163, 175, 0.8);
@@ -21,7 +23,16 @@
   --scrollbar-thumb-hover: rgba(107, 114, 128, 0.8);
 }
 
-/* Styles pour Firefox */
+/* Styles pour les bordures */
+.border-theme {
+  border-color: var(--border-color);
+}
+
+.border-theme-focus:focus {
+  border-color: var(--border-focus-color);
+}
+
+/* Styles de base pour les barres de défilement */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
@@ -115,6 +126,18 @@ input:focus {
   animation: shimmer 1.5s infinite;
 }
 
+/* Styles pour les titres de films */
+.movie-title {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  background: linear-gradient(to right, #fff, #e2e8f0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 /* Font Size Utilities */
 .text-size-small {
   font-size: 0.875rem;
@@ -157,16 +180,4 @@ input:focus {
 
 .has-tooltip:hover .tooltip {
   @apply visible z-50;
-}
-
-/* Styles pour les titres de films */
-.movie-title {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-  background: linear-gradient(to right, #fff, #e2e8f0);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }

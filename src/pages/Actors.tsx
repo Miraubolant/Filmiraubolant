@@ -9,6 +9,8 @@ import { getZodiacSign } from '../utils/zodiac';
 type SortOption = 'popularity' | 'name' | 'trending';
 type FilterOption = 'all' | 'movie' | 'tv';
 
+const ITEMS_PER_PAGE = 36;
+
 export function Actors() {
   const [actors, setActors] = useState<Person[]>([]);
   const [selectedActor, setSelectedActor] = useState<Person | null>(null);
@@ -24,19 +26,24 @@ export function Actors() {
   // Charger les acteurs populaires ou rechercher des acteurs
   useEffect(() => {
     const loadActors = async () => {
+      if (searchQuery) return;
+      
       setLoading(true);
       try {
-        if (searchQuery.trim()) {
-          setIsSearching(true);
-          const data = await searchActors(searchQuery);
-          setActors(data.results);
-          setTotalPages(Math.min(data.total_pages, 500));
-          setIsSearching(false);
-        } else {
-          const data = await fetchPopularActors(currentPage);
-          setActors(data.results);
-          setTotalPages(Math.min(data.total_pages, 500));
-        }
+        // Charger plusieurs pages en parallèle
+        const pages = await Promise.all([
+          fetchPopularActors(currentPage),
+          fetchPopularActors(currentPage + 1)
+        ]);
+
+        // Combiner et dédupliquer les résultats
+        const allActors = pages.flatMap(page => page.results)
+          .reduce((unique: Person[], actor: Person) => {
+            return unique.some(a => a.id === actor.id) ? unique : [...unique, actor];
+          }, []);
+
+        setActors(allActors);
+        setTotalPages(Math.min(pages[0].total_pages, 500));
       } catch (error) {
         console.error('Error loading actors:', error);
       } finally {
@@ -47,6 +54,26 @@ export function Actors() {
     const searchTimeout = setTimeout(loadActors, 300);
     return () => clearTimeout(searchTimeout);
   }, [currentPage, searchQuery]);
+
+  // Effet pour la recherche
+  useEffect(() => {
+    const searchTimeout = setTimeout(async () => {
+      if (searchQuery.trim()) {
+        setIsSearching(true);
+        try {
+          const data = await searchActors(searchQuery);
+          setActors(data.results);
+          setTotalPages(Math.min(data.total_pages, 500));
+        } catch (error) {
+          console.error('Error searching actors:', error);
+        } finally {
+          setIsSearching(false);
+        }
+      }
+    }, 300);
+
+    return () => clearTimeout(searchTimeout);
+  }, [searchQuery]);
 
   const handleActorClick = async (actor: Person) => {
     setSelectedActor(actor);
@@ -65,35 +92,9 @@ export function Actors() {
     }
   };
 
-  const getPageNumbers = () => {
-    const pageNumbers = [];
-    let startPage: number;
-    let endPage: number;
-
-    if (totalPages <= 5) {
-      startPage = 1;
-      endPage = totalPages;
-    } else if (currentPage <= 3) {
-      startPage = 1;
-      endPage = 5;
-    } else if (currentPage >= totalPages - 2) {
-      startPage = totalPages - 4;
-      endPage = totalPages;
-    } else {
-      startPage = currentPage - 2;
-      endPage = currentPage + 2;
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pageNumbers.push(i);
-    }
-
-    return pageNumbers;
-  };
-
+  // Filtrer et trier les acteurs
   const filteredActors = actors
     .filter(actor => {
-      // Filtre par type de média
       if (filterBy !== 'all') {
         return actor.known_for.some(media => 
           (media as any).media_type === filterBy
@@ -102,7 +103,6 @@ export function Actors() {
       return true;
     })
     .sort((a, b) => {
-      // Tri
       switch (sortBy) {
         case 'name':
           return a.name.localeCompare(b.name);
@@ -112,6 +112,10 @@ export function Actors() {
           return b.popularity - a.popularity;
       }
     });
+
+  // Pagination
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedActors = filteredActors.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const sortOptions = [
     { value: 'popularity', label: 'Popularité', icon: Star },
@@ -128,21 +132,20 @@ export function Actors() {
   return (
     <div className="space-y-8">
       {/* En-tête */}
-      <div className="sticky top-16 z-40 bg-[#141414]/95 backdrop-blur-xl border-b border-gray-800 shadow-lg -mx-4 px-4 py-4">
+      <div className="sticky top-16 z-40 bg-[#141414]/95 backdrop-blur-xl border-b border-theme shadow-lg -mx-4 px-4 py-4">
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Users className="w-8 h-8 text-red-600" />
-              <h1 className="text-4xl font-bold">
+              <h1 className="text-4xl font-bold font-outfit">
                 <span className="text-white">Acteurs</span>
                 <span className="ml-2 text-red-600">Populaires</span>
               </h1>
             </div>
           </div>
 
-          {/* Filtres sur une ligne */}
+          {/* Barre de recherche et contrôles */}
           <div className="flex items-center gap-4">
-            {/* Barre de recherche */}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
               <input
@@ -150,7 +153,7 @@ export function Actors() {
                 placeholder="Rechercher un acteur..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-10 py-2 bg-transparent text-white placeholder-gray-500 rounded-lg outline-none border border-gray-800"
+                className="w-full pl-10 pr-10 py-2 bg-transparent text-white placeholder-gray-500 rounded-lg outline-none border border-theme border-theme-focus transition-colors"
               />
               {searchQuery && (
                 <button
@@ -163,7 +166,7 @@ export function Actors() {
             </div>
 
             {/* Séparateur vertical */}
-            <div className="h-8 w-px bg-gray-700" />
+            <div className="h-8 w-px bg-theme" />
 
             {/* Filtres par type */}
             <div className="flex items-center gap-2">
@@ -171,20 +174,20 @@ export function Actors() {
                 <button
                   key={option.value}
                   onClick={() => setFilterBy(option.value as FilterOption)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ${
                     filterBy === option.value
                       ? 'bg-red-600 text-white'
                       : 'text-gray-300 hover:bg-gray-800'
                   }`}
                 >
-                  <option.icon className="w-4 h-4" />
+                  <option.icon className="w-5 h-5" />
                   <span>{option.label}</span>
                 </button>
               ))}
             </div>
 
             {/* Séparateur vertical */}
-            <div className="h-8 w-px bg-gray-700" />
+            <div className="h-8 w-px bg-theme" />
 
             {/* Options de tri */}
             <div className="flex items-center gap-2">
@@ -192,13 +195,13 @@ export function Actors() {
                 <button
                   key={option.value}
                   onClick={() => setSortBy(option.value as SortOption)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all duration-200 ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ${
                     sortBy === option.value
                       ? 'bg-red-600 text-white'
                       : 'text-gray-300 hover:bg-gray-800'
                   }`}
                 >
-                  <option.icon className="w-4 h-4" />
+                  <option.icon className="w-5 h-5" />
                   <span>{option.label}</span>
                 </button>
               ))}
@@ -212,7 +215,7 @@ export function Actors() {
         <div className="flex justify-center items-center py-12">
           <div className="w-12 h-12 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
         </div>
-      ) : filteredActors.length === 0 ? (
+      ) : paginatedActors.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <Users className="w-16 h-16 text-gray-400 mb-4" />
           <h3 className="text-xl font-semibold mb-2">Aucun résultat trouvé</h3>
@@ -221,8 +224,8 @@ export function Actors() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {filteredActors.map((actor) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-6 gap-6">
+          {paginatedActors.map((actor) => (
             <motion.button
               key={actor.id}
               onClick={() => handleActorClick(actor)}
@@ -237,7 +240,7 @@ export function Actors() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="absolute bottom-0 left-0 p-4">
-                    <p className="text-white text-lg font-bold">{actor.name}</p>
+                    <p className="text-white text-lg font-bold font-outfit">{actor.name}</p>
                     <div className="flex items-center gap-2 mt-2">
                       <div className="flex items-center gap-1 px-2 py-1 bg-red-600/20 rounded-lg">
                         <Star className="w-4 h-4 text-red-500" />
@@ -253,7 +256,7 @@ export function Actors() {
       )}
 
       {/* Pagination */}
-      {!loading && !searchQuery && actors.length > 0 && (
+      {!loading && !searchQuery && paginatedActors.length > 0 && (
         <div className="flex justify-center items-center gap-4 py-8">
           <button
             onClick={() => handlePageChange(currentPage - 1)}
@@ -268,19 +271,32 @@ export function Actors() {
           </button>
           
           <div className="flex items-center gap-2">
-            {getPageNumbers().map((pageNumber) => (
-              <button
-                key={`page-${pageNumber}`}
-                onClick={() => handlePageChange(pageNumber)}
-                className={`w-10 h-10 rounded-lg transition-colors ${
-                  currentPage === pageNumber
-                    ? 'bg-red-600 text-white'
-                    : 'text-gray-400 hover:bg-gray-800'
-                }`}
-              >
-                {pageNumber}
-              </button>
-            ))}
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let pageNumber;
+              if (totalPages <= 5) {
+                pageNumber = i + 1;
+              } else if (currentPage <= 3) {
+                pageNumber = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNumber = totalPages - 4 + i;
+              } else {
+                pageNumber = currentPage - 2 + i;
+              }
+
+              return (
+                <button
+                  key={pageNumber}
+                  onClick={() => handlePageChange(pageNumber)}
+                  className={`w-10 h-10 rounded-lg transition-colors ${
+                    currentPage === pageNumber
+                      ? 'bg-red-600 text-white'
+                      : 'text-gray-400 hover:bg-gray-800'
+                  }`}
+                >
+                  {pageNumber}
+                </button>
+              );
+            })}
           </div>
 
           <button
@@ -319,7 +335,7 @@ export function Actors() {
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <h2 className="text-2xl font-bold text-white mb-2">{selectedActor.name}</h2>
+                    <h2 className="text-2xl font-bold text-white mb-2 font-outfit">{selectedActor.name}</h2>
                     <div className="flex items-center gap-2">
                       <Star className="w-5 h-5 text-red-500" />
                       <span className="text-gray-400">Popularité: {selectedActor.popularity.toFixed(1)}</span>
@@ -382,7 +398,7 @@ export function Actors() {
                         <div className="flex-1">
                           <div className="flex items-start justify-between">
                             <div>
-                              <h4 className="text-white font-semibold group-hover:text-red-500 transition-colors">
+                              <h4 className="text-white font-semibold group-hover:text-red-500 transition-colors font-outfit">
                                 {credit.title || credit.name}
                               </h4>
                               <p className="text-gray-400 text-sm">{credit.character}</p>

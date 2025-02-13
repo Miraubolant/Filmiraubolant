@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { Movie, TVShow } from '../types/tmdb';
 
 interface StoreState {
@@ -46,23 +46,28 @@ interface StoreState {
   addRating: (itemId: number, type: 'movie' | 'tv', rating: number) => void;
   addToHistory: (item: Movie | TVShow, type: 'movie' | 'tv') => void;
   clearHistory: () => void;
+  removeFromHistory: (itemId: number) => void;
 }
+
+const initialState = {
+  theme: 'dark' as const,
+  fontSize: 'medium' as const,
+  layout: 'grid' as const,
+  animations: true,
+  searchHistory: [],
+  savedFilters: [],
+  isSidebarExpanded: true,
+  favorites: { movies: [], shows: [] },
+  watchProgress: [],
+  customLists: [],
+  ratings: {},
+  watchHistory: [],
+};
 
 export const useStore = create<StoreState>()(
   persist(
-    (set) => ({
-      theme: 'dark',
-      fontSize: 'medium',
-      layout: 'grid',
-      animations: true,
-      searchHistory: [],
-      savedFilters: [],
-      isSidebarExpanded: true,
-      favorites: { movies: [], shows: [] },
-      watchProgress: [],
-      customLists: [],
-      ratings: {},
-      watchHistory: [],
+    (set, get) => ({
+      ...initialState,
       setFontSize: (fontSize) => set({ fontSize }),
       setLayout: (layout) => set({ layout }),
       setAnimations: (animations) => set({ animations }),
@@ -150,16 +155,63 @@ export const useStore = create<StoreState>()(
           },
         })),
       addToHistory: (item, type) =>
-        set((state) => ({
-          watchHistory: [
-            { item, type, watchedAt: new Date().toISOString() },
-            ...state.watchHistory,
-          ].slice(0, 100),
-        })),
+        set((state) => {
+          const existingIndex = state.watchHistory.findIndex(
+            (entry) => entry.item.id === item.id && entry.type === type
+          );
+
+          const newEntry = {
+            item,
+            type,
+            watchedAt: new Date().toISOString()
+          };
+
+          const updatedHistory = existingIndex !== -1
+            ? [
+                newEntry,
+                ...state.watchHistory.filter((_, index) => index !== existingIndex)
+              ]
+            : [newEntry, ...state.watchHistory];
+
+          return {
+            watchHistory: updatedHistory.slice(0, 100)
+          };
+        }),
       clearHistory: () => set({ watchHistory: [] }),
+      removeFromHistory: (itemId) =>
+        set((state) => ({
+          watchHistory: state.watchHistory.filter((entry) => entry.item.id !== itemId)
+        })),
     }),
     {
       name: 'cinema-preferences',
+      version: 3, // Incrémentation de la version
+      storage: createJSONStorage(() => localStorage),
+      migrate: (persistedState: any, version: number) => {
+        if (version === 0) {
+          return {
+            ...initialState,
+            ...persistedState,
+            watchHistory: [],
+          };
+        }
+        if (version === 1) {
+          return {
+            ...persistedState,
+            watchHistory: persistedState.watchHistory || [],
+            ratings: persistedState.ratings || {},
+          };
+        }
+        if (version === 2) {
+          return {
+            ...persistedState,
+            watchHistory: Array.isArray(persistedState.watchHistory) 
+              ? persistedState.watchHistory 
+              : [],
+          };
+        }
+        return persistedState;
+      },
     }
   )
 );

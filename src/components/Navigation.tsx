@@ -30,7 +30,7 @@ export function Navigation() {
   return (
     <nav className={`fixed left-0 top-16 bottom-0 z-40 transition-all duration-300 ${
       isSidebarExpanded ? 'w-64' : 'w-20'
-    } bg-[#141414] border-r border-gray-800`}>
+    } bg-[#141414] border-r border-theme`}>
       <div className="h-full flex flex-col p-4">
         {/* Menu sections */}
         <div className="flex-1 space-y-8">
@@ -62,7 +62,7 @@ export function Navigation() {
         </div>
 
         {/* Créateur */}
-        <div className="pt-4 border-t border-gray-800">
+        <div className="pt-4 border-t border-theme">
           <a
             href="https://miraubolant.com"
             target="_blank"

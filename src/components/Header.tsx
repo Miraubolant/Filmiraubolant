@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Film, Tv, Filter, Calendar, Clock, Monitor, Search, X, Tag } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Film, Tv, Filter, Calendar, Clock, Monitor, Search, X, Tag, ChevronDown, TrendingUp, Calendar as CalendarIcon } from 'lucide-react';
 
 // Logos des plateformes VOD avec des URLs vérifiées
 const VOD_PROVIDERS = [
@@ -36,26 +36,26 @@ const VOD_PROVIDERS = [
   }
 ];
 
-// Liste des genres
+// Liste des genres avec leurs icônes
 const GENRES = [
-  { id: 28, name: 'Action' },
-  { id: 12, name: 'Aventure' },
-  { id: 16, name: 'Animation' },
-  { id: 35, name: 'Comédie' },
-  { id: 80, name: 'Crime' },
-  { id: 99, name: 'Documentaire' },
-  { id: 18, name: 'Drame' },
-  { id: 10751, name: 'Famille' },
-  { id: 14, name: 'Fantastique' },
-  { id: 36, name: 'Histoire' },
-  { id: 27, name: 'Horreur' },
-  { id: 10402, name: 'Musique' },
-  { id: 9648, name: 'Mystère' },
-  { id: 10749, name: 'Romance' },
-  { id: 878, name: 'Science-Fiction' },
-  { id: 53, name: 'Thriller' },
-  { id: 10752, name: 'Guerre' },
-  { id: 37, name: 'Western' }
+  { id: 28, name: 'Action', icon: '🎬' },
+  { id: 12, name: 'Aventure', icon: '🗺️' },
+  { id: 16, name: 'Animation', icon: '🎨' },
+  { id: 35, name: 'Comédie', icon: '😂' },
+  { id: 80, name: 'Crime', icon: '🔍' },
+  { id: 99, name: 'Documentaire', icon: '📚' },
+  { id: 18, name: 'Drame', icon: '🎭' },
+  { id: 10751, name: 'Famille', icon: '👨‍👩‍👧‍👦' },
+  { id: 14, name: 'Fantastique', icon: '🔮' },
+  { id: 36, name: 'Histoire', icon: '📜' },
+  { id: 27, name: 'Horreur', icon: '👻' },
+  { id: 10402, name: 'Musique', icon: '🎵' },
+  { id: 9648, name: 'Mystère', icon: '🔎' },
+  { id: 10749, name: 'Romance', icon: '❤️' },
+  { id: 878, name: 'Science-Fiction', icon: '🚀' },
+  { id: 53, name: 'Thriller', icon: '🎯' },
+  { id: 10752, name: 'Guerre', icon: '⚔️' },
+  { id: 37, name: 'Western', icon: '🤠' }
 ];
 
 interface HeaderProps {
@@ -77,9 +77,10 @@ interface HeaderProps {
 }
 
 export function Header({ onSearch, onFilterChange, filters }: HeaderProps) {
-  const [showVodFilter, setShowVodFilter] = useState(false);
   const [showGenreFilter, setShowGenreFilter] = useState(false);
+  const [showDateFilter, setShowDateFilter] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [genreSearchQuery, setGenreSearchQuery] = useState('');
 
   const mediaTypes = [
     { value: 'all', label: 'Tout', icon: Film },
@@ -88,8 +89,8 @@ export function Header({ onSearch, onFilterChange, filters }: HeaderProps) {
   ];
 
   const sortOptions = [
-    { value: 'popularity', label: 'Popularité' },
-    { value: 'date', label: 'Date de sortie' }
+    { value: 'popularity', label: 'Popularité', icon: TrendingUp },
+    { value: 'date', label: 'Date de sortie', icon: CalendarIcon }
   ];
 
   const handleSearch = (query: string) => {
@@ -97,13 +98,20 @@ export function Header({ onSearch, onFilterChange, filters }: HeaderProps) {
     onSearch(query);
   };
 
+  // Filtrer les genres en fonction de la recherche
+  const filteredGenres = GENRES.filter(genre =>
+    genre.name.toLowerCase().includes(genreSearchQuery.toLowerCase())
+  );
+
   // Fermer les menus lors d'un clic à l'extérieur
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (!target.closest('.vod-filter') && !target.closest('.genre-filter')) {
-        setShowVodFilter(false);
+      if (!target.closest('.genre-filter')) {
         setShowGenreFilter(false);
+      }
+      if (!target.closest('.date-filter')) {
+        setShowDateFilter(false);
       }
     };
 
@@ -111,10 +119,12 @@ export function Header({ onSearch, onFilterChange, filters }: HeaderProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const selectedGenre = GENRES.find(g => g.id === filters.selectedGenre);
+
   return (
-    <div className="sticky top-16 z-40 bg-[#141414]/95 backdrop-blur-xl border-b border-gray-800 shadow-lg">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex flex-wrap items-center gap-4">
+    <div className="sticky top-16 z-40 bg-[#141414] shadow-lg">
+      <div className="container mx-auto">
+        <div className="flex items-center h-16 px-4 border-b border-theme">
           {/* Barre de recherche */}
           <div className="w-72 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
@@ -123,7 +133,7 @@ export function Header({ onSearch, onFilterChange, filters }: HeaderProps) {
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="Rechercher..."
-              className="w-full pl-10 pr-10 py-2 bg-transparent text-white placeholder-gray-500 rounded-lg outline-none border border-gray-800"
+              className="w-full pl-10 pr-10 py-2.5 bg-transparent text-white placeholder-gray-500 rounded-lg outline-none border border-theme border-theme-focus transition-colors text-base"
             />
             {searchQuery && (
               <button
@@ -136,7 +146,7 @@ export function Header({ onSearch, onFilterChange, filters }: HeaderProps) {
           </div>
 
           {/* Séparateur vertical */}
-          <div className="h-8 w-px bg-gray-700" />
+          <div className="h-8 w-px bg-theme mx-4" />
 
           {/* Type de média */}
           <div className="flex items-center gap-2">
@@ -144,20 +154,20 @@ export function Header({ onSearch, onFilterChange, filters }: HeaderProps) {
               <button
                 key={type.value}
                 onClick={() => onFilterChange({ ...filters, mediaType: type.value as any })}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all duration-200 ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ${
                   filters.mediaType === type.value
                     ? 'bg-red-600 text-white'
                     : 'text-gray-300 hover:bg-gray-800'
                 }`}
               >
-                <type.icon className="w-4 h-4" />
+                <type.icon className="w-5 h-5" />
                 <span>{type.label}</span>
               </button>
             ))}
           </div>
 
           {/* Séparateur vertical */}
-          <div className="h-8 w-px bg-gray-700" />
+          <div className="h-8 w-px bg-theme mx-4" />
 
           {/* Tri */}
           <div className="flex items-center gap-2">
@@ -165,134 +175,152 @@ export function Header({ onSearch, onFilterChange, filters }: HeaderProps) {
               <button
                 key={option.value}
                 onClick={() => onFilterChange({ ...filters, sortBy: option.value as any })}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all duration-200 ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ${
                   filters.sortBy === option.value
                     ? 'bg-red-600 text-white'
                     : 'text-gray-300 hover:bg-gray-800'
                 }`}
               >
-                {option.value === 'popularity' && <Film className="w-4 h-4" />}
-                {option.value === 'date' && <Calendar className="w-4 h-4" />}
+                <option.icon className="w-5 h-5" />
                 <span>{option.label}</span>
               </button>
             ))}
           </div>
 
           {/* Séparateur vertical */}
-          <div className="h-8 w-px bg-gray-700" />
+          <div className="h-8 w-px bg-theme mx-4" />
 
           {/* Filtre par genre */}
           <div className="relative genre-filter">
-            <button
+            <motion.button
               onClick={() => {
                 setShowGenreFilter(!showGenreFilter);
-                setShowVodFilter(false);
+                setShowDateFilter(false);
               }}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all duration-200 ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-base font-medium transition-all duration-200 ${
                 filters.selectedGenre !== null
                   ? 'bg-red-600 text-white'
                   : 'text-gray-300 hover:bg-gray-800'
               }`}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <Tag className="w-4 h-4" />
-              <span>
-                {filters.selectedGenre 
-                  ? GENRES.find(g => g.id === filters.selectedGenre)?.name 
-                  : 'Genres'
-                }
-              </span>
-            </button>
+              {selectedGenre ? (
+                <>
+                  <span className="text-lg">{selectedGenre.icon}</span>
+                  <span>{selectedGenre.name}</span>
+                </>
+              ) : (
+                <>
+                  <Tag className="w-5 h-5" />
+                  <span>Genres</span>
+                </>
+              )}
+              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showGenreFilter ? 'rotate-180' : ''}`} />
+            </motion.button>
 
             {/* Menu déroulant des genres */}
-            {showGenreFilter && (
-              <div className="absolute top-full left-0 mt-2 p-4 bg-gray-800 rounded-lg shadow-xl w-[400px] grid grid-cols-2 gap-2 z-50">
-                {GENRES.map(genre => (
-                  <button
-                    key={genre.id}
-                    onClick={() => {
-                      onFilterChange({
-                        ...filters,
-                        selectedGenre: filters.selectedGenre === genre.id ? null : genre.id
-                      });
-                      setShowGenreFilter(false);
-                    }}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                      filters.selectedGenre === genre.id
-                        ? 'bg-red-600 text-white'
-                        : 'hover:bg-gray-700 text-gray-300'
-                    }`}
-                  >
-                    <Tag className="w-4 h-4" />
-                    <span>{genre.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+            <AnimatePresence>
+              {showGenreFilter && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute top-full left-0 mt-2 bg-[#1a1a1a] rounded-xl shadow-xl w-[400px] backdrop-blur-xl border border-theme z-50"
+                >
+                  {/* Barre de recherche des genres */}
+                  <div className="p-3 border-b border-theme">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                      <input
+                        type="text"
+                        value={genreSearchQuery}
+                        onChange={(e) => setGenreSearchQuery(e.target.value)}
+                        placeholder="Rechercher un genre..."
+                        className="w-full pl-9 pr-9 py-2 bg-transparent text-white placeholder-gray-500 rounded-lg outline-none border border-theme border-theme-focus transition-colors text-sm"
+                      />
+                      {genreSearchQuery && (
+                        <button
+                          onClick={() => setGenreSearchQuery('')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-red-500 hover:text-red-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Liste des genres */}
+                  <div className="grid grid-cols-2 gap-2 p-3 max-h-[400px] overflow-y-auto scrollbar-custom">
+                    {filteredGenres.map(genre => (
+                      <motion.button
+                        key={genre.id}
+                        onClick={() => {
+                          onFilterChange({
+                            ...filters,
+                            selectedGenre: filters.selectedGenre === genre.id ? null : genre.id
+                          });
+                          setShowGenreFilter(false);
+                          setGenreSearchQuery('');
+                        }}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                          filters.selectedGenre === genre.id
+                            ? 'bg-red-600 text-white'
+                            : 'hover:bg-gray-800 text-gray-300'
+                        }`}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <span className="text-lg">{genre.icon}</span>
+                        <span>{genre.name}</span>
+                      </motion.button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Séparateur vertical */}
-          <div className="h-8 w-px bg-gray-700" />
+          <div className="h-8 w-px bg-theme mx-4" />
 
-          {/* Filtre VOD */}
-          <div className="relative vod-filter">
-            <button
-              onClick={() => {
-                setShowVodFilter(!showVodFilter);
-                setShowGenreFilter(false);
-              }}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all duration-200 ${
-                filters.showVodOnly
-                  ? 'bg-red-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-800'
-              }`}
-            >
-              <Monitor className="w-4 h-4" />
-              <span>Plateformes VOD</span>
-            </button>
-
-            {/* Menu déroulant des plateformes VOD */}
-            {showVodFilter && (
-              <div className="absolute top-full right-0 mt-2 p-4 bg-gray-800 rounded-lg shadow-xl w-[400px] z-50">
-                <div className="grid grid-cols-3 gap-3">
-                  {VOD_PROVIDERS.map(provider => (
-                    <button
-                      key={provider.id}
-                      onClick={() => {
-                        onFilterChange({
-                          ...filters,
-                          selectedProvider: filters.selectedProvider === provider.id ? null : provider.id,
-                          showVodOnly: true
-                        });
-                        setShowVodFilter(false);
-                      }}
-                      className={`relative rounded-lg overflow-hidden group transition-transform hover:scale-105 ${
-                        filters.selectedProvider === provider.id
-                          ? 'ring-2 ring-red-600'
-                          : ''
-                      }`}
-                    >
-                      <div className="aspect-square bg-black/20 p-4 flex items-center justify-center">
-                        <img
-                          src={provider.logo}
-                          alt={provider.name}
-                          className="w-full h-full object-contain"
-                        />
-                      </div>
-                      <div className={`absolute inset-0 transition-colors ${
-                        filters.selectedProvider === provider.id
-                          ? 'bg-red-600/20'
-                          : 'group-hover:bg-black/20'
-                      }`} />
-                      <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-                        <p className="text-xs text-center text-white font-medium">
-                          {provider.name}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
+          {/* Logos VOD */}
+          <div className="flex items-center gap-3">
+            {VOD_PROVIDERS.map(provider => (
+              <motion.button
+                key={provider.id}
+                onClick={() => {
+                  onFilterChange({
+                    ...filters,
+                    selectedProvider: filters.selectedProvider === provider.id ? null : provider.id,
+                    showVodOnly: true
+                  });
+                }}
+                className={`relative group ${
+                  filters.selectedProvider === provider.id
+                    ? 'ring-2 ring-red-600'
+                    : ''
+                }`}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <img
+                  src={provider.logo}
+                  alt={provider.name}
+                  className="w-8 h-8 rounded-lg"
+                />
+                <div className={`absolute inset-0 rounded-lg transition-colors ${
+                  filters.selectedProvider === provider.id
+                    ? 'bg-red-600/20'
+                    : 'group-hover:bg-black/20'
+                }`} />
+                {/* Tooltip */}
+                <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                  {provider.name}
                 </div>
-              </div>
-            )}
+              </motion.button>
+            ))}
           </div>
         </div>
       </div>

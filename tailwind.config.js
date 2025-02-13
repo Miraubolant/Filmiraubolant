@@ -17,6 +17,10 @@ export default {
       fontFamily: {
         outfit: ['Outfit', 'sans-serif'],
       },
+      screens: {
+        '2xl': '1536px',
+        '3xl': '1920px',
+      },
     },
   },
   plugins: [],

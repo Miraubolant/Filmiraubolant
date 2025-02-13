@@ -18,7 +18,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-[#0a0a0a] text-white">
+      <div className="min-h-screen bg-[#141414] text-white font-outfit">
         <SiteHeader />
         <div className="flex pt-16">
           <Navigation />

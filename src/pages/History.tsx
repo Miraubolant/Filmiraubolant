@@ -2,16 +2,17 @@ import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
 import { MediaCard } from '../components/MediaCard';
 import { motion, AnimatePresence } from 'framer-motion';
-import { History as HistoryIcon, Search, Trash2, Calendar, Grid, Layout, X } from 'lucide-react';
+import { History as HistoryIcon, Search, Trash2, Filter, Calendar, Grid, Layout, X, Clock } from 'lucide-react';
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'recent' | 'oldest' | 'name';
 
 export function History() {
-  const { watchHistory, clearHistory } = useStore();
+  const { watchHistory, clearHistory, removeFromHistory } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
+  const [showConfirmClear, setShowConfirmClear] = useState(false);
 
   // Filtrer et trier l'historique
   const filteredHistory = [...watchHistory]
@@ -40,20 +41,40 @@ export function History() {
     { value: 'name', label: 'Nom', icon: Layout }
   ];
 
+  const handleClearHistory = () => {
+    setShowConfirmClear(true);
+  };
+
+  const confirmClearHistory = () => {
+    clearHistory();
+    setShowConfirmClear(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* En-tête */}
-      <div className="sticky top-16 z-40 bg-[#141414]/95 backdrop-blur-xl border-b border-gray-800 shadow-lg -mx-4 px-4 py-4">
+      <div className="sticky top-16 z-40 bg-[#141414]/95 backdrop-blur-xl border-b border-theme shadow-lg -mx-4 px-4 py-4">
         <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-3">
-            <HistoryIcon className="w-8 h-8 text-red-600" />
-            <h2 className="text-4xl font-bold">
-              <span className="text-white">Historique de</span>
-              <span className="ml-2 text-red-600">Visionnage</span>
-            </h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <HistoryIcon className="w-8 h-8 text-red-600" />
+              <h2 className="text-4xl font-bold font-outfit">
+                <span className="text-white">Historique de</span>
+                <span className="ml-2 text-red-600">Visionnage</span>
+              </h2>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 px-4 py-2 bg-red-600/10 rounded-lg">
+                <Clock className="w-5 h-5 text-red-500" />
+                <div className="text-sm">
+                  <span className="font-medium text-white">{filteredHistory.length}</span>
+                  <span className="text-gray-400 ml-2">films et séries vus</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Barre de recherche et contrôles sur la même ligne */}
+          {/* Barre de recherche et contrôles */}
           <div className="flex items-center gap-4">
             {/* Barre de recherche */}
             <div className="relative flex-1">
@@ -63,7 +84,7 @@ export function History() {
                 placeholder="Rechercher dans l'historique..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-10 py-2 bg-transparent text-white placeholder-gray-500 rounded-lg outline-none border border-gray-800"
+                className="w-full pl-10 pr-10 py-2 bg-transparent text-white placeholder-gray-500 rounded-lg outline-none border border-theme border-theme-focus transition-colors"
               />
               {searchQuery && (
                 <button
@@ -76,7 +97,7 @@ export function History() {
             </div>
 
             {/* Séparateur vertical */}
-            <div className="h-8 w-px bg-gray-700" />
+            <div className="h-8 w-px bg-theme" />
 
             {/* Options de tri */}
             <div className="flex items-center gap-2">
@@ -97,7 +118,7 @@ export function History() {
             </div>
 
             {/* Séparateur vertical */}
-            <div className="h-8 w-px bg-gray-700" />
+            <div className="h-8 w-px bg-theme" />
 
             {/* Vue grille/liste */}
             <button
@@ -112,11 +133,11 @@ export function History() {
             </button>
 
             {/* Séparateur vertical */}
-            <div className="h-8 w-px bg-gray-700" />
+            <div className="h-8 w-px bg-theme" />
 
             {/* Bouton pour vider l'historique */}
             <button
-              onClick={clearHistory}
+              onClick={handleClearHistory}
               className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
               title="Vider l'historique"
             >
@@ -129,7 +150,7 @@ export function History() {
       {/* Grille de médias */}
       {filteredHistory.length > 0 ? (
         <div className={viewMode === 'grid'
-          ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6'
+          ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-6'
           : 'space-y-4'
         }>
           {filteredHistory.map(({ item, type, watchedAt }) => (
@@ -142,15 +163,23 @@ export function History() {
             >
               <MediaCard item={item} type={type} showProviders={true} />
               <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                <p className="text-sm text-white">
-                  Vu le {new Date(watchedAt).toLocaleDateString('fr-FR', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-white">
+                    Vu le {new Date(watchedAt).toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                  <button
+                    onClick={() => removeFromHistory(item.id)}
+                    className="p-1 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </motion.div>
           ))}
@@ -164,6 +193,46 @@ export function History() {
           </p>
         </div>
       )}
+
+      {/* Modal de confirmation pour vider l'historique */}
+      <AnimatePresence>
+        {showConfirmClear && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowConfirmClear(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#141414] rounded-xl shadow-xl max-w-md w-full p-6"
+              onClick={e => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-bold mb-4">Vider l'historique ?</h3>
+              <p className="text-gray-400 mb-6">
+                Cette action supprimera définitivement tout votre historique de visionnage. Cette action est irréversible.
+              </p>
+              <div className="flex justify-end gap-4">
+                <button
+                  onClick={() => setShowConfirmClear(false)}
+                  className="px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={confirmClearHistory}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Confirmer
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

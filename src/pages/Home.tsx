@@ -119,7 +119,6 @@ export function Home() {
 
   return (
     <div className="space-y-6">
-      {/* Header avec filtres */}
       <Header
         onSearch={setSearchQuery}
         onFilterChange={setFilters}
@@ -144,8 +143,8 @@ export function Home() {
         </div>
       )}
 
-      {/* Grille de médias */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+      {/* Grille de médias avec plus de breakpoints */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-6">
         {paginatedMedia.map((item) => (
           <MediaCard
             key={`${item.id}-${item.mediaType}`}
@@ -213,30 +212,6 @@ export function Home() {
           </button>
         </div>
       )}
-
-      {/* Footer */}
-      <footer className="mt-12 py-8 border-t border-gray-800">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <p className="text-sm text-gray-400">
-              Créé avec ❤️ par{' '}
-              <a
-                href="https://miraubolant.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-red-500 hover:text-red-600 transition-colors font-medium"
-              >
-                Victor Mirault
-              </a>
-            </p>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>•</span>
-              <span>{new Date().getFullYear()}</span>
-              <span>•</span>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
